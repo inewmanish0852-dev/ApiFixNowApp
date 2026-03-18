@@ -14,6 +14,12 @@ use App\Http\Controllers\Api\V1\Admin\{
     AdminDashboardController,
 };
 
+Route::get('test', function () {
+    return response()->json([
+        'message' => 'Test route',
+    ]);
+});
+
 Route::prefix('v1')->group(function () {
 
     // ── Public ──────────────────────────────────────────
