@@ -28,6 +28,7 @@ EXPOSE 10000
 # Run migration then start server
 CMD php artisan config:clear && \
     php artisan cache:clear && \
+    php artisan jwt:secret --force && \
     php artisan migrate --force && \
     php artisan db:seed --force --no-interaction && \
     php -S 0.0.0.0:10000 -t public
