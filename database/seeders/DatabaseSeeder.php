@@ -16,11 +16,12 @@ class DatabaseSeeder extends Seeder
         $this->command->info('─────────────────────────────────────');
 
         $this->call([
-            ServiceCategorySeeder::class,  // 1. Categories pehle
-            ServiceSeeder::class,          // 2. Services (categories pe depend)
-            UserSeeder::class,             // 3. Customers + Providers
-            BookingSeeder::class,          // 4. Bookings (users + services pe depend)
-            ReviewSeeder::class,           // 5. Reviews (bookings pe depend)
+            AdminSeeder::class,  // 1. Admin pehle
+            ServiceCategorySeeder::class,  // 2. Categories pehle
+            ServiceSeeder::class,          // 3. Services (categories pe depend)
+            UserSeeder::class,             // 4. Customers + Providers
+            BookingSeeder::class,          // 5. Bookings (users + services pe depend)
+            ReviewSeeder::class,           // 6. Reviews (bookings pe depend)
             DisputeSeeder::class,          // 6. Disputes (bookings pe depend)
             NotificationSeeder::class,     // 7. Notifications (users + bookings pe depend)
         ]);
