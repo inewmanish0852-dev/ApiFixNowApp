@@ -56,10 +56,10 @@ class BookingController extends Controller
 
     public function show($id)
     {   
-        $getRole = auth()->user();
+        $getRole = auth('web')->user();
         if($getRole->role->slug === 'provider'){
             $booking = Booking::with(['provider.user','customer','review'])
-                ->where('provider_id', auth()->user()->id)
+                ->where('provider_id', auth('web')->user()->id)
                 ->find($id);
         }else{
             $booking = Booking::with(['provider.user','customer','review'])
@@ -90,7 +90,7 @@ class BookingController extends Controller
     public function providerJobs(Request $request)
     {
         $jobs = Booking::with(['customer:id,name,phone,avatar','review'])
-            ->where('provider_id', auth()->user()->id)
+            ->where('provider_id', auth('web')->user()->id)
             ->when($request->status, fn($q) => $q->where('status', $request->status))
             ->latest()
             ->paginate(10);
@@ -100,7 +100,7 @@ class BookingController extends Controller
 
     public function accept($id)
     {
-        $booking = Booking::where('provider_id', auth()->user()->id)
+        $booking = Booking::where('provider_id', auth('web')->user()->id)
                         ->where('status', 'pending')
                         ->find($id);
 
@@ -121,14 +121,14 @@ class BookingController extends Controller
 
         if ($v->fails()) return $this->validationError($v->errors());
 
-        $booking = Booking::where('provider_id', auth()->user()->id)->find($id);
+        $booking = Booking::where('provider_id', auth('web')->user()->id)->find($id);
 
         if (! $booking) return $this->notFound('Job not found.');
 
         $booking->update(['status' => $request->status]);
 
         if ($request->status === 'completed') {
-            auth()->user()->providerProfile->increment('total_jobs');
+            auth('web')->user()->providerProfile->increment('total_jobs');
         }
         NotificationService::jobStatusUpdated($booking);
 
@@ -137,7 +137,7 @@ class BookingController extends Controller
 
     public function decline($id)
     {
-        $booking = Booking::where('provider_id', auth()->user()->id)
+        $booking = Booking::where('provider_id', auth('web')->user()->id)
                         ->where('status', 'pending')
                         ->find($id);
 

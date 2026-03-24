@@ -11,7 +11,6 @@ use App\Traits\ApiResponse;
 class ProfileController extends Controller
 {
     use ApiResponse;
-    // PUT /profile
     public function update(Request $request)
     {
         $v = Validator::make($request->all(), [
@@ -26,24 +25,12 @@ class ProfileController extends Controller
 
         if ($v->fails()) return response()->json(['success' => false, 'errors' => $v->errors()], 422);
 
-        auth()->user()->update($request->only('name','phone','city','state','address','lat','lng'));
+        auth('web')->user()->update($request->only('name','phone','city','state','address','lat','lng'));
 
-        return response()->json(['success' => true, 'data' => auth()->user()->load('role')]);
+        $user = User::with('role')->find(auth()->id());
+        return $this->success($user, 'Profile updated successfully.');
     }
 
-    // POST /profile/avatar
-    // public function uploadAvatar(Request $request)
-    // {
-    //     $request->validate(['avatar' => 'required|image|max:2048']);
-
-    //     $path = $request->file('avatar')->store('avatars', 'public');
-
-    //     auth()->user()->update(['avatar' => Storage::url($path)]);
-
-    //     return response()->json(['success' => true, 'avatar' => Storage::url($path)]);
-    // }
-
-    // PUT /provider/profile
     public function updateProviderProfile(Request $request)
     {
         $v = Validator::make($request->all(), [
@@ -60,41 +47,36 @@ class ProfileController extends Controller
             $request->only('category','bio','experience_years','hourly_rate')
         );
 
-        return response()->json(['success' => true, 'data' => $profile->load('skills')]);
+        return $this->success($profile->load('skills'), 'Profile updated successfully.');
     }
 
-    // POST /provider/profile/skills
     public function syncSkills(Request $request)
     {
         $request->validate(['skills' => 'required|array', 'skills.*' => 'string|max:60']);
 
-        $profile = auth()->user();
+        $profile = auth('web')->user();
         $profile->skills()->delete();
 
         foreach ($request->skills as $skill) {
             $profile->skills()->create(['skill_name' => $skill]);
         }
 
-        return response()->json(['success' => true, 'data' => $profile->skills]);
+        return $this->success($profile->skills, 'Skills updated successfully.');
     }
 
-    // PATCH /provider/availability
     public function toggleAvailability()
     {
-        $profile = auth()->user();
+        $profile = auth('web')->user();
 
         $profile->update(['is_available' => ! $profile->is_available]);
 
-        return response()->json([
-            'success'      => true,
+        return $this->success([
             'is_available' => $profile->is_available,
-        ]);
+        ], 'Availability updated successfully.');
     }
-
-    // GET /provider/earnings
     public function earnings()
     {
-        $profile = auth()->user();
+        $profile = auth('web')->user();
         $earnings = \App\Models\Booking::where('provider_id', $profile->id)
             ->where('status', 'completed')
             ->selectRaw('
@@ -105,10 +87,9 @@ class ProfileController extends Controller
             ')
             ->first();
 
-        return response()->json(['success' => true, 'data' => $earnings]);
+        return $this->success($earnings, 'Earnings fetched successfully.');
     }
 
-    // POST /profile/password
     public function changePassword(Request $request)
     {
         $v = Validator::make($request->all(), [
@@ -118,16 +99,15 @@ class ProfileController extends Controller
 
         if ($v->fails()) return $this->validationError($v->errors());
 
-        if (! Hash::check($request->current_password, auth()->user()->password)) {
+        if (! Hash::check($request->current_password, auth('web')->user()->password)) {
             return $this->error('Current password is incorrect.', 422);
         }
 
-        auth()->user()->update(['password' => Hash::make($request->password)]);
+        auth('web')->user()->update(['password' => Hash::make($request->password)]);
 
         return $this->success(null, 'Password changed successfully.');
     }
 
-    // POST /profile/avatar
     public function uploadAvatar(Request $request)
     {
         $v = Validator::make($request->all(), [
@@ -136,13 +116,13 @@ class ProfileController extends Controller
 
         if ($v->fails()) return $this->validationError($v->errors());
 
-        $old = auth()->user()->avatar;
+        $old = auth('web')->user()->avatar;
         if ($old && Storage::disk('public')->exists(str_replace('/storage/', '', $old))) {
             Storage::disk('public')->delete(str_replace('/storage/', '', $old));
         }
 
         $path = $request->file('avatar')->store('avatars', 'public');
-        auth()->user()->update(['avatar' => Storage::url($path)]);
+        auth('web')->user()->update(['avatar' => Storage::url($path)]);
 
         return $this->success(['avatar' => Storage::url($path)], 'Avatar updated.');
     }

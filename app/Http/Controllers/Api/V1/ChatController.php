@@ -59,7 +59,7 @@ class ChatController extends Controller
 
     private function authorizeBooking($bookingId)
     {
-        $user    = auth()->user();
+        $user    = auth('web')->user();
         $booking = Booking::findOrFail($bookingId);
         $allowed = $user->id === $booking->customer_id
                 || $user->id === $booking->provider->user_id;

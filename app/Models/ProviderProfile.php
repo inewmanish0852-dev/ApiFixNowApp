@@ -15,4 +15,4 @@ class ProviderProfile extends Model
     public function user()       { return $this->belongsTo(User::class); }
     public function skills()     { return $this->hasMany(ProviderSkill::class, 'provider_id'); }
     public function bookings()   { return $this->hasMany(Booking::class, 'provider_id'); }
-}
+}       

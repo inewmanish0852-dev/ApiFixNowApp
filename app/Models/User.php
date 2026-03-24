@@ -1,4 +1,8 @@
 <?php
+// =====================================================
+// FILE: app/Models/User.php
+// =====================================================
+
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -12,7 +16,7 @@ class User extends Authenticatable implements JWTSubject
     protected $fillable = [
         'role_id', 'name', 'email', 'phone', 'password',
         'avatar', 'city', 'state', 'address', 'lat', 'lng',
-        'is_verified', 'is_active',
+        'is_verified', 'is_active', 'is_banned', 'ban_reason',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -21,11 +25,12 @@ class User extends Authenticatable implements JWTSubject
         'email_verified_at' => 'datetime',
         'is_verified'       => 'boolean',
         'is_active'         => 'boolean',
+        'is_banned'         => 'boolean',
         'lat'               => 'decimal:7',
         'lng'               => 'decimal:7',
     ];
 
-    // JWT required methods
+    // ── JWT ───────────────────────────────────────────────────────────────
     public function getJWTIdentifier()
     {
         return $this->getKey();
@@ -39,24 +44,23 @@ class User extends Authenticatable implements JWTSubject
         ];
     }
 
-    // Relations
-    public function role()
-    {
-        return $this->belongsTo(Role::class);
-    }
+    // ── Relations ─────────────────────────────────────────────────────────
+    public function role()            { return $this->belongsTo(Role::class); }
+    public function providerProfile() { return $this->hasOne(ProviderProfile::class); }
+    public function provider()        { return $this->hasOne(Provider::class); }
 
-    public function providerProfile()
-    {
-        return $this->hasOne(ProviderProfile::class);
-    }
+    public function bookingsAsCustomer() { return $this->hasMany(Booking::class, 'customer_id'); }
+    public function bookings()           { return $this->hasMany(Booking::class, 'customer_id'); }
+    public function reviews()            { return $this->hasMany(Review::class, 'reviewer_id'); }
+    public function notifications()      { return $this->hasMany(Notification::class); }
 
-    public function bookingsAsCustomer()
-    {
-        return $this->hasMany(Booking::class, 'customer_id');
-    }
-
-    // Helper methods
-    public function isAdmin(): bool    { return $this->role->slug === 'admin'; }
+    // ── Helpers ───────────────────────────────────────────────────────────
+    public function isAdmin():    bool { return $this->role->slug === 'admin'; }
     public function isProvider(): bool { return $this->role->slug === 'provider'; }
     public function isCustomer(): bool { return $this->role->slug === 'customer'; }
+
+    public function getInitialAttribute(): string
+    {
+        return strtoupper(substr($this->name, 0, 1));
+    }
 }
