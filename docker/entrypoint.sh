@@ -1,32 +1,26 @@
-FROM php:8.4-cli
+#!/bin/sh
 
-WORKDIR /var/www
+echo "🚀 Starting Laravel App on Render..."
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    libzip-dev \
-    zip \
-    libpq-dev \
-    && docker-php-ext-install zip pdo pdo_pgsql
+# Clear cache
+php artisan config:clear
+php artisan cache:clear
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Generate JWT key if not exists
+php artisan jwt:secret --force
 
-# Copy project
-COPY . .
+# Run safe migrations (no data loss)
+php artisan migrate --force
 
-# Install dependencies
-RUN composer install --no-dev --optimize-autoloader
+# Run seeder only once (if users table empty)
+USER_COUNT=$(php artisan tinker --execute="echo DB::table('users')->count();")
 
-# Laravel permissions
-RUN chmod -R 775 storage bootstrap/cache
+if [ "$USER_COUNT" = "0" ]; then
+    echo "🌱 Running seeders (first time only)..."
+    php artisan db:seed --force --no-interaction
+else
+    echo "⏭️ Seeder skipped (data already exists)"
+fi
 
-# Copy entrypoint
-COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-EXPOSE 10000
-
-ENTRYPOINT ["/entrypoint.sh"]
+# Start Laravel server
+php -S 0.0.0.0:10000 -t public
